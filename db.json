@@ -1105,8 +1105,37 @@
     "email": "admin@gmail.com",
     "password": "Admin@123"
   }],
-  "notifications": [],
-  "bloodInventory": [],
+  "notifications": [
+    
+  ],
+  "bloodStocks": [{
+    "id": "1",
+    "bloodGroup": "A+",
+    "availableUnits": 25,
+    "reservedUnits": 5,
+    "expiredUnits": 1,
+    "minimumUnits": 10,
+    "status": "Available",
+    "lastUpdated": "2026-08-05T10:30:00.000Z"
+},
+{
+    "id": "2",
+    "bloodGroup": "O+",
+    "availableUnits": 2,
+    "reservedUnits": 0,
+    "expiredUnits": 0,
+    "minimumUnits": 10,
+    "status": "Available",
+    "lastUpdated": "2026-08-05T10:30:00.000Z"
+}],
+  "donorRequests": [{
+    "id": "DR001",
+    "donorName": "Arjun Kumar",
+    "bloodGroup": "O+",
+    "district": "Ernakulam",
+    "hospital": "City Care Hospital",
+    "email": "arjun.kumar@gmail.com"
+}],
   "emergencyRequests": [],
 
   "$schema": "./node_modules/json-server/schema.json"
