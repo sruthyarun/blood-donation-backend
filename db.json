@@ -1101,6 +1101,10 @@
     "createdAt": "2026-08-04T15:45:00.000Z"
   }
 ],
+  "admin": [{
+    "email": "admin@gmail.com",
+    "password": "Admin@123"
+  }],
   "notifications": [],
   "bloodInventory": [],
   "emergencyRequests": [],
