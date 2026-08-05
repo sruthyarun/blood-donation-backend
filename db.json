@@ -1,0 +1,29 @@
+{
+  "donors": [
+    {
+      "fullName": "BXJhzXH",
+      "email": "bg@gmail.com",
+      "phone": "9874563210",
+      "gender": "Male",
+      "dob": "1998-08-21",
+      "bloodGroup": "O+",
+      "weight": "56",
+      "lastDonation": "2003-08-20",
+      "address": "sdusdgsgd hjhg jhh jhjk",
+      "city": "thrissur",
+      "state": "dgcgvjc",
+      "pincode": "680504",
+      "diseases": "No",
+      "availability": "Yes",
+      "password": "Sruthym$08",
+      "id": "4VvUwGAq0t8"
+    }
+  ],
+  "recipients": [],
+  "hospitals": [],
+  "bloodBanks": [],
+  "appointments": [],
+  "bloodRequests": [],
+  "notifications": [],
+  "$schema": "./node_modules/json-server/schema.json"
+}
