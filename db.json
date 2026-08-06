@@ -1102,7 +1102,15 @@
   }
 ],
   "admin": [{
+  
+      "id": "ADM001",
+      "name": "System Administrator",
     "email": "admin@gmail.com",
+      "phone": "+91 9876543210",
+      "department": "Blood Bank Administration",
+      "address": "Kochi, Kerala",
+      "joined": "15 January 2025",
+      "role": "Admin",
     "password": "Admin@123"
   }],
   "notifications": [
