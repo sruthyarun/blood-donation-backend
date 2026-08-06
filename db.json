@@ -1117,6 +1117,43 @@
     
   ],
   
+  "donationEvents": [
+    {
+      "id": "EVT001",
+      "title": "World Blood Donor Day Camp",
+      "description": "Community blood donation camp for voluntary donors.",
+      "eventType": "Blood Donation Camp",
+      "location": "City Care Hospital",
+      "address": "Kozhikode, Kerala",
+      "date": "2026-08-15",
+      "startTime": "09:00",
+      "endTime": "16:00",
+      "organizer": "City Care Hospital",
+      "contact": "+91 9876543210",
+      "expectedDonors": 100,
+      "registeredDonors": 45,
+      "status": "Upcoming",
+      "createdAt": "2026-08-05T10:00:00.000Z"
+    },
+    {
+      "id": "EVT002",
+      "title": "Emergency Blood Donation Drive",
+      "description": "Emergency blood collection campaign.",
+      "eventType": "Emergency Drive",
+      "location": "Central Blood Bank",
+      "address": "Kozhikode, Kerala",
+      "date": "2026-08-20",
+      "startTime": "10:00",
+      "endTime": "15:00",
+      "organizer": "Central Blood Bank",
+      "contact": "+91 9123456789",
+      "expectedDonors": 75,
+      "registeredDonors": 60,
+      "status": "Upcoming",
+      "createdAt": "2026-08-05T11:00:00.000Z"
+    }
+  ],
+  
   "bloodStocks": [
     {
       "id": "BS001",
