@@ -1108,26 +1108,113 @@
   "notifications": [
     
   ],
-  "bloodStocks": [{
-    "id": "1",
-    "bloodGroup": "A+",
-    "availableUnits": 25,
-    "reservedUnits": 5,
-    "expiredUnits": 1,
-    "minimumUnits": 10,
-    "status": "Available",
-    "lastUpdated": "2026-08-05T10:30:00.000Z"
-},
-{
-    "id": "2",
-    "bloodGroup": "O+",
-    "availableUnits": 2,
-    "reservedUnits": 0,
-    "expiredUnits": 0,
-    "minimumUnits": 10,
-    "status": "Available",
-    "lastUpdated": "2026-08-05T10:30:00.000Z"
-}],
+  
+  "bloodStocks": [
+    {
+      "id": "BS001",
+     "ownerType": "BloodBank",
+      "ownerId": "BB001",
+      "ownerName": "Kozhikode Blood Bank",
+      "bloodGroup": "A+",
+      "availableUnits": 25,
+      "reservedUnits": 2,
+      "expiredUnits": 1,
+      "minimumUnits": 10,
+      "status": "Available",
+      "lastUpdated": "2026-08-05T10:30:00.000Z"
+    },
+    {
+      "id": "BS002",
+      "ownerType": "Hospital",
+      "ownerId": "H001",
+      "ownerName": "City Care Hospital",
+      "bloodGroup": "A-",
+      "availableUnits": 8,
+      "reservedUnits": 0,
+      "expiredUnits": 0,
+      "minimumUnits": 10,
+      "status": "Low",
+      "lastUpdated": "2026-08-05T10:30:00.000Z"
+    },
+    {
+      "id": "BS003",
+      "ownerType": "Hospital",
+      "ownerId": "H001",
+      "ownerName": "City Care Hospital",
+      "bloodGroup": "B+",
+      "availableUnits": 20,
+      "reservedUnits": 3,
+      "expiredUnits": 1,
+      "minimumUnits": 10,
+      "status": "Available",
+      "lastUpdated": "2026-08-05T10:30:00.000Z"
+    },
+    {
+      "id": "BS004",
+      "ownerType": "Hospital",
+      "ownerId": "H001",
+      "ownerName": "City Care Hospital",
+      "bloodGroup": "B-",
+      "availableUnits": 4,
+      "reservedUnits": 0,
+      "expiredUnits": 0,
+      "minimumUnits": 8,
+      "status": "Critical",
+      "lastUpdated": "2026-08-05T10:30:00.000Z"
+    },
+    {
+      "id": "BS005",
+      "ownerType": "Hospital",
+      "ownerId": "H001",
+      "ownerName": "City Care Hospital",
+      "bloodGroup": "O+",
+      "availableUnits": 8,
+      "reservedUnits": 0,
+      "expiredUnits": 0,
+      "minimumUnits": 10,
+      "status": "Low",
+      "lastUpdated": "2026-08-05T10:30:00.000Z"
+    },
+    {
+      "id": "BS006",
+      "ownerType": "Hospital",
+      "ownerId": "H001",
+      "ownerName": "City Care Hospital",
+      "bloodGroup": "O-",
+      "availableUnits": 3,
+      "reservedUnits": 1,
+      "expiredUnits": 0,
+      "minimumUnits": 5,
+      "status": "Critical",
+      "lastUpdated": "2026-08-05T10:30:00.000Z"
+    },
+    {
+      "id": "BS007",
+      "ownerType": "Hospital",
+      "ownerId": "H001",
+      "ownerName": "City Care Hospital",
+      "bloodGroup": "AB+",
+      "availableUnits": 15,
+      "reservedUnits": 2,
+      "expiredUnits": 0,
+      "minimumUnits": 8,
+      "status": "Available",
+      "lastUpdated": "2026-08-05T10:30:00.000Z"
+    },
+    {
+      "id": "BS008",
+      "ownerType": "Hospital",
+      "ownerId": "H001",
+      "ownerName": "City Care Hospital",
+      "bloodGroup": "AB-",
+      "availableUnits": 2,
+      "reservedUnits": 0,
+      "expiredUnits": 0,
+      "minimumUnits": 5,
+      "status": "Critical",
+      "lastUpdated": "2026-08-05T10:30:00.000Z"
+    }
+  ],
   "donorRequests": [{
     "id": "DR001",
     "donorName": "Arjun Kumar",
