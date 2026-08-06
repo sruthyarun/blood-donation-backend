@@ -1268,6 +1268,38 @@
     "hospital": "City Care Hospital",
     "email": "arjun.kumar@gmail.com"
 }],
+"feedback": [
+  {
+    "id": "1",
+    "name": "Anu Thomas",
+    "email": "anu@gmail.com",
+    "phone": "9876543210",
+    "subject": "Blood Donation",
+    "message": "I would like to know about the next blood donation camp.",
+    "status": "New",
+    "createdAt": "2026-08-05T10:30:00.000Z"
+  },
+  {
+    "id": "2",
+    "name": "Rahul Kumar",
+    "email": "rahul@gmail.com",
+    "phone": "9876543211",
+    "subject": "Website Feedback",
+    "message": "The blood donation website is very helpful and easy to use.",
+    "status": "Read",
+    "createdAt": "2026-08-04T09:15:00.000Z"
+  },
+  {
+    "id": "3",
+    "name": "Meera Nair",
+    "email": "meera@gmail.com",
+    "phone": "9847123456",
+    "subject": "Blood Request",
+    "message": "I need information about submitting an urgent blood request.",
+    "status": "New",
+    "createdAt": "2026-08-03T14:45:00.000Z"
+  }
+],
   "emergencyRequests": [],
 
   "$schema": "./node_modules/json-server/schema.json"
