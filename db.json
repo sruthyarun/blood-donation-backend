@@ -1301,6 +1301,132 @@
   }
 ],
   "emergencyRequests": [],
+  
+  "campaigns": [
+    {
+      "id": "1",
+      "title": "World Blood Donor Day Camp",
+      "description": "A special blood donation campaign to encourage voluntary blood donation and help maintain adequate blood stock.",
+      "date": "2026-08-15",
+      "startTime": "09:00",
+      "endTime": "16:00",
+      "venue": "Government General Hospital",
+      "address": "Kochi, Kerala, India",
+      "organizer": "GiveLife Blood Donation Team",
+      "contact": "+91 9876543210",
+      "email": "support@givelife.com",
+      "bloodGroups": [
+        "A+",
+        "A-",
+        "B+",
+        "B-",
+        "AB+",
+        "AB-",
+        "O+",
+        "O-"
+      ],
+      "targetDonors": 100,
+      "registeredDonors": 65,
+      "status": "Upcoming",
+      "image": "",
+      "createdAt": "2026-08-05T10:00:00.000Z"
+    },
+    {
+      "id": "2",
+      "title": "Save Lives Blood Donation Camp",
+      "description": "Community blood donation drive organized to support patients in need of blood transfusion.",
+      "date": "2026-08-22",
+      "startTime": "10:00",
+      "endTime": "15:00",
+      "venue": "City Community Hall",
+      "address": "Calicut, Kerala, India",
+      "organizer": "GiveLife Community Team",
+      "contact": "+91 9876543210",
+      "email": "support@givelife.com",
+      "bloodGroups": [
+        "O+",
+        "O-",
+        "A+",
+        "B+"
+      ],
+      "targetDonors": 75,
+      "registeredDonors": 32,
+      "status": "Upcoming",
+      "image": "",
+      "createdAt": "2026-08-06T09:30:00.000Z"
+    },
+    {
+      "id": "3",
+      "title": "Emergency Blood Donation Drive",
+      "description": "Emergency blood donation campaign conducted to increase the availability of critical blood groups.",
+      "date": "2026-08-10",
+      "startTime": "09:30",
+      "endTime": "14:00",
+      "venue": "District Hospital",
+      "address": "Kannur, Kerala, India",
+      "organizer": "District Blood Bank",
+      "contact": "+91 9876543210",
+      "email": "support@givelife.com",
+      "bloodGroups": [
+        "O+",
+        "O-",
+        "A-"
+      ],
+      "targetDonors": 50,
+      "registeredDonors": 50,
+      "status": "Completed",
+      "image": "",
+      "createdAt": "2026-07-30T11:00:00.000Z"
+    },
+    {
+      "id": "4",
+      "title": "College Blood Donation Camp",
+      "description": "Blood donation awareness and collection campaign organized in association with local colleges.",
+      "date": "2026-09-05",
+      "startTime": "09:00",
+      "endTime": "15:30",
+      "venue": "ABC College Auditorium",
+      "address": "Thrissur, Kerala, India",
+      "organizer": "GiveLife Youth Team",
+      "contact": "+91 9876543210",
+      "email": "support@givelife.com",
+      "bloodGroups": [
+        "A+",
+        "B+",
+        "O+",
+        "AB+"
+      ],
+      "targetDonors": 120,
+      "registeredDonors": 20,
+      "status": "Upcoming",
+      "image": "",
+      "createdAt": "2026-08-08T12:00:00.000Z"
+    },
+    {
+      "id": "5",
+      "title": "Community Blood Donation Drive",
+      "description": "A community initiative to promote regular voluntary blood donation.",
+      "date": "2026-07-25",
+      "startTime": "10:00",
+      "endTime": "16:00",
+      "venue": "Community Health Centre",
+      "address": "Malappuram, Kerala, India",
+      "organizer": "Local Blood Bank",
+      "contact": "+91 9876543210",
+      "email": "support@givelife.com",
+      "bloodGroups": [
+        "A+",
+        "B+",
+        "O+",
+        "O-"
+      ],
+      "targetDonors": 80,
+      "registeredDonors": 72,
+      "status": "Completed",
+      "image": "",
+      "createdAt": "2026-07-15T10:30:00.000Z"
+    }
+  ],
 
   "$schema": "./node_modules/json-server/schema.json"
 }
