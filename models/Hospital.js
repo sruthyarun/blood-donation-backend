@@ -39,6 +39,7 @@ const hospitalSchema = new mongoose.Schema(
         phone: {
             type: String,
             required: true,
+            trim: true,
         },
 
         registrationNumber: {
@@ -58,6 +59,7 @@ const hospitalSchema = new mongoose.Schema(
         address: {
             type: String,
             required: true,
+            trim: true,
         },
 
         city: {
@@ -75,6 +77,7 @@ const hospitalSchema = new mongoose.Schema(
         pincode: {
             type: String,
             required: true,
+            trim: true,
         },
 
         bloodBank: {
@@ -92,6 +95,7 @@ const hospitalSchema = new mongoose.Schema(
         emergencyPhone: {
             type: String,
             required: true,
+            trim: true,
         },
 
         password: {
@@ -116,11 +120,22 @@ const hospitalSchema = new mongoose.Schema(
     }
 );
 
-// Hash the password before saving
+// Hash password before saving a new or modified password
 hospitalSchema.pre("save", async function () {
-    if (!this.isModified("password")) return;
+    if (!this.isModified("password")) {
+        return;
+    }
 
     this.password = await bcrypt.hash(this.password, 12);
+});
+
+// Remove password from normal JSON responses
+hospitalSchema.set("toJSON", {
+    transform: function (doc, ret) {
+        delete ret.password;
+        delete ret.__v;
+        return ret;
+    },
 });
 
 module.exports = mongoose.model("Hospital", hospitalSchema);

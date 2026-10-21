@@ -3,28 +3,32 @@ const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 
+dotenv.config();
+
 const connectDB = require("./config/db");
+
 const donorRoutes = require("./routes/donorRoutes");
 const recipientRoutes = require("./routes/recipientRoutes");
 const hospitalRoutes = require("./routes/hospitalRoutes");
 const bloodBankRoutes = require("./routes/bloodBankRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const authRoutes = require("./routes/authRoutes");
-
-dotenv.config();
-
-connectDB();
+const appointmentRoutes = require("./routes/appointmentRoutes");
+const bloodRequestRoutes = require("./routes/bloodRequestRoutes");
+const bloodInventoryRoutes = require("./routes/bloodInventoryRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
 
 const app = express();
 
 app.use(cors());
 
-// Updated request-size limits
 app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({
-    extended: true,
-    limit: "10mb"
-}));
+app.use(
+    express.urlencoded({
+        extended: true,
+        limit: "10mb",
+    })
+);
 
 app.get("/", (req, res) => {
     res.json({
@@ -33,15 +37,38 @@ app.get("/", (req, res) => {
     });
 });
 
+// API routes
 app.use("/api/donors", donorRoutes);
 app.use("/api/recipients", recipientRoutes);
 app.use("/api/hospitals", hospitalRoutes);
 app.use("/api/bloodBanks", bloodBankRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/auth", authRoutes);
-
+app.use("/api/appointments", appointmentRoutes);
+app.use("/api/bloodRequests", bloodRequestRoutes);
+app.use("/api/bloodInventory", bloodInventoryRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use(
+    "/api/emergencyRequests",
+    require("./routes/emergencyRequestRoutes")
+);
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+const startServer = async () => {
+    try {
+        await connectDB();
+
+        app.listen(PORT, () => {
+            console.log(`Server running on port ${PORT} `);
+        });
+    } catch (error) {
+        console.error(
+            "Failed to connect to MongoDB:",
+            error.message
+        );
+
+        process.exit(1);
+    }
+};
+
+startServer();
