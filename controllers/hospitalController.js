@@ -1,3 +1,5 @@
+
+const mongoose = require("mongoose");
 const Hospital = require("../models/Hospital");
 
 // Create hospital
@@ -32,9 +34,18 @@ const createHospital = async (req, res) => {
             });
         }
 
+        const normalizedEmail = email?.trim().toLowerCase();
+
+        if (!normalizedEmail) {
+            return res.status(400).json({
+                success: false,
+                message: "Email is required",
+            });
+        }
+
         const existingHospital = await Hospital.findOne({
             $or: [
-                { email },
+                { email: normalizedEmail },
                 { registrationNumber },
                 { licenseNumber },
             ],
@@ -43,7 +54,8 @@ const createHospital = async (req, res) => {
         if (existingHospital) {
             return res.status(400).json({
                 success: false,
-                message: "Hospital already exists with this email, registration number, or license number",
+                message:
+                    "Hospital already exists with this email, registration number, or license number",
             });
         }
 
@@ -52,7 +64,7 @@ const createHospital = async (req, res) => {
             hospitalType,
             contactPerson,
             adminName,
-            email,
+            email: normalizedEmail,
             phone,
             registrationNumber,
             licenseNumber,
@@ -85,7 +97,7 @@ const createHospital = async (req, res) => {
 // Get all hospitals
 const getHospitals = async (req, res) => {
     try {
-        const hospitals = await Hospital.find();
+        const hospitals = await Hospital.find().select("-password");
 
         res.status(200).json({
             success: true,
@@ -104,7 +116,16 @@ const getHospitals = async (req, res) => {
 // Get hospital by ID
 const getHospitalById = async (req, res) => {
     try {
-        const hospital = await Hospital.findById(req.params.id);
+        if (!mongoose.isValidObjectId(req.params.id)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid hospital ID",
+            });
+        }
+
+        const hospital = await Hospital.findById(
+            req.params.id
+        ).select("-password");
 
         if (!hospital) {
             return res.status(404).json({
@@ -129,14 +150,40 @@ const getHospitalById = async (req, res) => {
 // Update hospital
 const updateHospital = async (req, res) => {
     try {
+        const { id } = req.params;
+
+        if (!mongoose.isValidObjectId(id)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid hospital ID",
+            });
+        }
+
+        // Do not allow clients to overwrite MongoDB IDs
+        // or submit confirmPassword as a database field.
+        const {
+            _id,
+            id: ignoredId,
+            confirmPassword,
+            ...updateData
+        } = req.body;
+
+        if (updateData.email) {
+            updateData.email = updateData.email.trim().toLowerCase();
+        }
+
+        // Never update a hospital password through this
+        // general profile endpoint without hashing it.
+        delete updateData.password;
+
         const hospital = await Hospital.findByIdAndUpdate(
-            req.params.id,
-            req.body,
+            id,
+            { $set: updateData },
             {
-                new: true,
+                returnDocument: "after",
                 runValidators: true,
             }
-        );
+        ).select("-password");
 
         if (!hospital) {
             return res.status(404).json({
@@ -162,7 +209,16 @@ const updateHospital = async (req, res) => {
 // Delete hospital
 const deleteHospital = async (req, res) => {
     try {
-        const hospital = await Hospital.findByIdAndDelete(req.params.id);
+        if (!mongoose.isValidObjectId(req.params.id)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid hospital ID",
+            });
+        }
+
+        const hospital = await Hospital.findByIdAndDelete(
+            req.params.id
+        );
 
         if (!hospital) {
             return res.status(404).json({
