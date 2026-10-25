@@ -17,7 +17,8 @@ const appointmentRoutes = require("./routes/appointmentRoutes");
 const bloodRequestRoutes = require("./routes/bloodRequestRoutes");
 const bloodInventoryRoutes = require("./routes/bloodInventoryRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
-
+const donationCampRoutes = require("./routes/donationCampRoutes");
+const emergencyRequestRoutes = require("./routes/emergencyRequestRoutes");
 const app = express();
 
 app.use(cors());
@@ -48,10 +49,17 @@ app.use("/api/appointments", appointmentRoutes);
 app.use("/api/bloodRequests", bloodRequestRoutes);
 app.use("/api/bloodInventory", bloodInventoryRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/donationCamps", donationCampRoutes);
 app.use(
     "/api/emergencyRequests",
     require("./routes/emergencyRequestRoutes")
 );
+
+app.use("/api/emergencyRequests", emergencyRequestRoutes);
+
+app.use("/api/appointments", require("./routes/appointmentRoutes"));
+app.use("/api/donationCamps", donationCampRoutes);
+
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {

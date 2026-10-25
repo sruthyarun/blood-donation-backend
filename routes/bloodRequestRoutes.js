@@ -1,11 +1,18 @@
 
 const express = require("express");
+const mongoose = require("mongoose");
+
+const BloodRequest = require("../models/BloodRequest");
+const Hospital = require("../models/Hospital");
+const BloodBank = require("../models/BloodBank");
+
 const router = express.Router();
 
-const mongoose = require("mongoose");
-const BloodRequest = require("../models/BloodRequest");
-const Notification = require("../models/Notification");
-// POST: Create a new blood request
+const getList = async (Model, filter = {}) => {
+    return Model.find(filter).lean();
+};
+
+// Create a blood request.
 router.post("/", async (req, res) => {
     try {
         const {
@@ -14,7 +21,8 @@ router.post("/", async (req, res) => {
             patientName,
             bloodGroup,
             units,
-            hospital,
+            requestToType,
+            requestToId,
             requiredDate,
             priority,
             email,
@@ -22,43 +30,39 @@ router.post("/", async (req, res) => {
             notes,
         } = req.body;
 
-        const requiredFields = [
-            "recipientId",
-            "recipientName",
-            "patientName",
-            "bloodGroup",
-            "units",
-            "hospital",
-            "requiredDate",
-            "priority",
-            "email",
-            "phone",
-        ];
-
-        const missingFields = requiredFields.filter((field) => {
-            const value = req.body[field];
-
-            return (
-                value === undefined ||
-                value === null ||
-                String(value).trim() === ""
-            );
-        });
-
-        if (missingFields.length) {
+        if (
+            !recipientId ||
+            !recipientName ||
+            !patientName ||
+            !bloodGroup ||
+            !units ||
+            !requestToType ||
+            !requestToId ||
+            !requiredDate ||
+            !priority ||
+            !email ||
+            !phone
+        ) {
             return res.status(400).json({
-                success: false,
                 message: "Please provide all required blood request fields.",
-                missingFields,
             });
         }
 
-        const parsedUnits = Number(units);
-
-        if (!Number.isInteger(parsedUnits) || parsedUnits < 1) {
+        if (!Number.isInteger(Number(units)) || Number(units) < 1) {
             return res.status(400).json({
-                success: false,
-                message: "Units must be a positive whole number.",
+                message: "Units must be a positive integer.",
+            });
+        }
+
+        if (!["Hospital", "Blood Bank"].includes(requestToType)) {
+            return res.status(400).json({
+                message: "Destination must be Hospital or Blood Bank.",
+            });
+        }
+
+        if (!mongoose.Types.ObjectId.isValid(requestToId)) {
+            return res.status(400).json({
+                message: "Invalid hospital or blood bank ID.",
             });
         }
 
@@ -66,284 +70,147 @@ router.post("/", async (req, res) => {
 
         if (Number.isNaN(parsedDate.getTime())) {
             return res.status(400).json({
-                success: false,
                 message: "Please provide a valid required date.",
             });
         }
 
-        const normalizedEmail = String(email).trim().toLowerCase();
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
 
-        // Correct email validation regex
-        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-        if (!emailPattern.test(normalizedEmail)) {
+        if (parsedDate < today) {
             return res.status(400).json({
-                success: false,
-                message: "Please provide a valid email address.",
+                message: "Required date cannot be in the past.",
             });
         }
 
-        const newBloodRequest = await BloodRequest.create({
+        const DestinationModel =
+            requestToType === "Hospital" ? Hospital : BloodBank;
+
+        const destination = await DestinationModel.findById(
+            requestToId
+        );
+
+        if (!destination) {
+            return res.status(404).json({
+                message: `${requestToType} not found.`,
+            });
+        }
+
+        if (
+            String(destination.status || "").toLowerCase() !==
+            "approved"
+        ) {
+            return res.status(400).json({
+                message: `The selected ${requestToType.toLowerCase()} is not approved.`,
+            });
+        }
+
+        const destinationName =
+            requestToType === "Hospital"
+                ? destination.hospitalName || destination.name
+                : destination.bloodBankName ||
+                destination.bankName ||
+                destination.name;
+
+        if (!destinationName) {
+            return res.status(400).json({
+                message: "The selected destination has no name.",
+            });
+        }
+
+        const bloodRequest = await BloodRequest.create({
             recipientId: String(recipientId).trim(),
-            recipientName: String(recipientName).trim(),
-            patientName: String(patientName).trim(),
-            bloodGroup: String(bloodGroup).trim(),
-            units: parsedUnits,
-            hospital: String(hospital).trim(),
+            recipientName: recipientName.trim(),
+            patientName: patientName.trim(),
+            bloodGroup: bloodGroup.trim().toUpperCase(),
+            units: Number(units),
+            requestToType,
+            requestToId: String(destination._id),
+            requestToName: destinationName,
+
+            // Preserve compatibility with existing hospital pages.
+            hospital:
+                requestToType === "Hospital"
+                    ? destinationName
+                    : "",
+
             requiredDate: parsedDate,
-            priority: String(priority).trim(),
-            email: normalizedEmail,
-            phone: String(phone).trim(),
-            notes: notes ? String(notes).trim() : "",
+            priority,
+            email: email.trim().toLowerCase(),
+            phone: phone.trim(),
+            notes: notes || "",
             status: "Pending",
         });
 
         return res.status(201).json({
-            success: true,
             message: "Blood request submitted successfully.",
-            data: newBloodRequest,
+            data: bloodRequest,
         });
     } catch (error) {
         console.error("Create blood request error:", error);
 
-        if (error.name === "ValidationError") {
-            return res.status(400).json({
-                success: false,
-                message: error.message,
-            });
-        }
-
         return res.status(500).json({
-            success: false,
             message: "Failed to create blood request.",
-        });
-    }
-});
-
-// GET: Retrieve requests filtered by hospital, email, or recipientId
-router.get("/", async (req, res) => {
-    try {
-        const filter = {};
-
-        if (req.query.hospital) {
-            filter.hospital = {
-                $regex: `^${String(req.query.hospital).trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`,
-                $options: "i",
-            };
-        }
-
-        if (req.query.email) {
-            filter.email = String(req.query.email).trim().toLowerCase();
-        }
-
-        if (req.query.recipientId) {
-            filter.recipientId = String(req.query.recipientId).trim();
-        }
-
-        const requests = await BloodRequest.find(filter)
-            .sort({ createdAt: -1 })
-            .lean();
-
-        return res.status(200).json({
-            success: true,
-            count: requests.length,
-            data: requests,
-        });
-    } catch (error) {
-        console.error("Fetch blood requests error:", error);
-
-        return res.status(500).json({
-            success: false,
-            message: "Failed to fetch blood requests.",
-        });
-    }
-});
-
-// GET: Retrieve one request by MongoDB ID
-router.get("/:id", async (req, res) => {
-    try {
-        const { id } = req.params;
-
-        if (!mongoose.isValidObjectId(id)) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid blood request ID.",
-            });
-        }
-
-        const bloodRequest = await BloodRequest.findById(id);
-
-        if (!bloodRequest) {
-            return res.status(404).json({
-                success: false,
-                message: "Blood request not found.",
-            });
-        }
-
-        return res.status(200).json({
-            success: true,
-            data: bloodRequest,
-        });
-    } catch (error) {
-        console.error("Fetch blood request error:", error);
-
-        return res.status(500).json({
-            success: false,
-            message: "Failed to fetch blood request.",
-        });
-    }
-});
-
-// PATCH: Approve or reject a blood request
-
-router.patch("/:id", async (req, res) => {
-    try {
-        const { status } = req.body;
-
-        if (!["Approved", "Rejected"].includes(status)) {
-            return res.status(400).json({
-                success: false,
-                message: "Status must be Approved or Rejected.",
-            });
-        }
-
-        // Find the request in MongoDB.
-        const request = await BloodRequest.findById(req.params.id);
-
-        if (!request) {
-            return res.status(404).json({
-                success: false,
-                message: "Blood request not found.",
-            });
-        }
-
-        // Only allow pending requests to be processed.
-        if (
-            request.status &&
-            request.status.toLowerCase() !== "pending"
-        ) {
-            return res.status(400).json({
-                success: false,
-                message: "This request has already been processed.",
-            });
-        }
-
-        // Save the new status.
-        request.status = status;
-        await request.save();
-
-        // Save a notification for the recipient.
-        try {
-            const recipientEmail = request.email
-                ?.trim()
-                .toLowerCase();
-
-            if (!recipientEmail) {
-                console.error(
-                    "Request status updated, but recipient email is missing."
-                );
-
-                return res.status(200).json({
-                    success: true,
-                    data: request,
-                    notificationCreated: false,
-                    message:
-                        `Request ${status.toLowerCase()} successfully, ` +
-                        "but the recipient email is missing.",
-                });
-            }
-
-            await Notification.create({
-                title: `Blood Request ${status}`,
-                type: "bloodRequest",
-                emailTo: recipientEmail,
-                emailBy: (
-                    req.body.emailBy || "hospital"
-                ).trim().toLowerCase(),
-                message:
-                    `Your blood request for ${request.bloodGroup} ` +
-                    `has been ${status.toLowerCase()}.`,
-                bloodRequestId: request._id,
-                status,
-                read: false,
-            });
-
-            return res.status(200).json({
-                success: true,
-                data: request,
-                notificationCreated: true,
-                message:
-                    `Blood request ${status.toLowerCase()} ` +
-                    "and notification saved successfully.",
-            });
-        } catch (notificationError) {
-            console.error(
-                "Notification creation failed:",
-                notificationError
-            );
-
-            return res.status(200).json({
-                success: true,
-                data: request,
-                notificationCreated: false,
-                message:
-                    "Request status updated, but notification creation failed.",
-            });
-        }
-    } catch (error) {
-        console.error("Blood request status update error:", error);
-
-        return res.status(500).json({
-            success: false,
-            message: "Failed to update blood request.",
             error: error.message,
         });
     }
 });
 
-module.exports = router;
-
-
-// DELETE: Delete a pending blood request
-router.delete("/:id", async (req, res) => {
+// Get requests. Optional filters:
+// ?email=recipient@example.com
+// ?requestToType=Hospital&requestToId=<MongoDB ID>
+// ?recipientId=<recipient ID>
+router.get("/", async (req, res) => {
     try {
-        const { id } = req.params;
+        const {
+            email,
+            recipientId,
+            requestToType,
+            requestToId,
+            hospital,
+        } = req.query;
 
-        if (!mongoose.isValidObjectId(id)) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid blood request ID.",
-            });
+        const filter = {};
+
+        if (email) {
+            filter.email = String(email).trim().toLowerCase();
         }
 
-        const request = await BloodRequest.findById(id);
-
-        if (!request) {
-            return res.status(404).json({
-                success: false,
-                message: "Blood request not found.",
-            });
+        if (recipientId) {
+            filter.recipientId = String(recipientId).trim();
         }
 
-        if (request.status !== "Pending") {
-            return res.status(400).json({
-                success: false,
-                message: "Only pending requests can be deleted.",
-            });
+        if (requestToType) {
+            if (!["Hospital", "Blood Bank"].includes(requestToType)) {
+                return res.status(400).json({
+                    message: "Invalid request destination type.",
+                });
+            }
+
+            filter.requestToType = requestToType;
         }
 
-        await BloodRequest.findByIdAndDelete(id);
+        if (requestToId) {
+            filter.requestToId = String(requestToId).trim();
+        }
+
+        // Compatibility with older hospital dashboard requests.
+        if (hospital && !requestToId) {
+            filter.hospital = String(hospital).trim();
+        }
+
+        const requests = await getList(BloodRequest, filter);
 
         return res.status(200).json({
-            success: true,
-            message: "Blood request deleted successfully.",
+            count: requests.length,
+            data: requests,
         });
     } catch (error) {
-        console.error("Delete blood request error:", error);
+        console.error("Get blood requests error:", error);
 
         return res.status(500).json({
-            success: false,
-            message: "Failed to delete blood request.",
+            message: "Failed to fetch blood requests.",
+            error: error.message,
         });
     }
 });

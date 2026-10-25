@@ -1,29 +1,37 @@
 
 const express = require("express");
-const router = express.Router();
-
 const mongoose = require("mongoose");
+
 const Appointment = require("../models/Appointment");
 const Notification = require("../models/Notification");
 
-// GET appointments, optionally filtered by hospital or donor email
+const router = express.Router();
+
+// ==========================================
+// Helper: Escape special regex characters
+// ==========================================
+function escapeRegex(value) {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// ==========================================
+// GET /api/appointments
+// Get appointments with optional filters
+// ==========================================
 router.get("/", async (req, res) => {
     try {
-        const { hospital, email } = req.query;
+        const {
+            email,
+            hospital,
+            hospitalId,
+            bloodBankId,
+            destinationType,
+            destinationId,
+        } = req.query;
+
         const filter = {};
 
-        if (hospital && hospital.trim()) {
-            const escapedHospital = hospital.trim().replace(
-                /[.*+?^${}()|[\]\\]/g,
-                "\\$&"
-            );
-
-            filter.hospital = {
-                $regex: `^${escapedHospital}$`,
-                $options: "i",
-            };
-        }
-
+        // Filter by donor email
         if (email && email.trim()) {
             const normalizedEmail = email.trim().toLowerCase();
 
@@ -33,25 +41,215 @@ router.get("/", async (req, res) => {
             ];
         }
 
-        const appointments = await Appointment.find(filter).sort({
-            createdAt: -1,
-        });
+        // Filter by hospital name
+        if (hospital && hospital.trim()) {
+            filter.hospital = {
+                $regex: `^${escapeRegex(hospital.trim())}$`,
+                $options: "i",
+            };
+        }
 
-        return res.status(200).json(appointments);
+        // Filter by hospital ID
+        if (hospitalId && hospitalId.trim()) {
+            filter.hospitalId = hospitalId.trim();
+        }
+
+        // Filter by blood bank ID
+        if (bloodBankId && bloodBankId.trim()) {
+            filter.bloodBankId = bloodBankId.trim();
+        }
+
+        // Filter by destination ID
+        if (destinationId && destinationId.trim()) {
+            filter.destinationId = destinationId.trim();
+        }
+
+        // Filter by destination type
+        if (destinationType) {
+            if (!["Hospital", "BloodBank"].includes(destinationType)) {
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "Destination type must be Hospital or BloodBank.",
+                });
+            }
+
+            filter.destinationType = destinationType;
+        }
+
+        const appointments = await Appointment.find(filter)
+            .sort({ createdAt: -1 })
+            .lean();
+
+        return res.status(200).json({
+            success: true,
+            count: appointments.length,
+            data: appointments,
+        });
     } catch (error) {
-        console.error("Failed to fetch appointments:", error);
+        console.error("Get appointments error:", error);
 
         return res.status(500).json({
             success: false,
-            message: "Failed to fetch appointments.",
+            message: "Failed to retrieve appointments.",
         });
     }
 });
 
-// BOOK A NEW APPOINTMENT
+// ==========================================
+// POST /api/appointments
+// Book an appointment at a hospital or bank
+// ==========================================
 router.post("/", async (req, res) => {
     try {
-        const appointment = await Appointment.create(req.body);
+        const {
+            donorId,
+            donorName,
+            donorEmail,
+            email,
+            bloodGroup,
+            district,
+            destinationType,
+            destinationId,
+            destinationName,
+            hospitalId,
+            bloodBankId,
+            bloodBankName,
+            date,
+            time,
+            phone,
+            notes,
+        } = req.body;
+
+        // Support donorEmail and legacy email field
+        const normalizedEmail = String(donorEmail || email || "")
+            .trim()
+            .toLowerCase();
+
+        // Validate required fields
+        const requiredFields = {
+            donorName,
+            email: normalizedEmail,
+            bloodGroup,
+            district,
+            destinationType,
+            destinationId,
+            destinationName,
+            date,
+            time,
+            phone,
+        };
+
+        const missingFields = Object.entries(requiredFields)
+            .filter(
+                ([, value]) =>
+                    value === undefined ||
+                    value === null ||
+                    String(value).trim() === ""
+            )
+            .map(([field]) => field);
+
+        if (missingFields.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    "Please provide all required appointment fields.",
+                missingFields,
+            });
+        }
+
+        // Validate destination type
+        if (!["Hospital", "BloodBank"].includes(destinationType)) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    "Destination type must be Hospital or BloodBank.",
+            });
+        }
+
+        // Validate YYYY-MM-DD format
+        if (
+            typeof date !== "string" ||
+            !/^\d{4}-\d{2}-\d{2}$/.test(date)
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: "Date must be in YYYY-MM-DD format.",
+            });
+        }
+
+        // Validate actual calendar date without UTC conversion
+        const [year, month, day] = date.split("-").map(Number);
+
+        const requestedDate = new Date(year, month - 1, day);
+
+        if (
+            requestedDate.getFullYear() !== year ||
+            requestedDate.getMonth() !== month - 1 ||
+            requestedDate.getDate() !== day
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: "Please provide a valid calendar date.",
+            });
+        }
+
+        // Reject dates in the past
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (requestedDate < today) {
+            return res.status(400).json({
+                success: false,
+                message: "Appointment date cannot be in the past.",
+            });
+        }
+
+        // Normalize destination information
+        const selectedDestinationId = String(destinationId).trim();
+        const selectedDestinationName = String(destinationName).trim();
+
+        // Prepare appointment document
+        const appointmentData = {
+            donorId: donorId ? String(donorId).trim() : "",
+            donorName: String(donorName).trim(),
+            donorEmail: normalizedEmail,
+            email: normalizedEmail,
+            bloodGroup: String(bloodGroup).trim(),
+            district: String(district).trim(),
+
+            destinationType,
+            destinationId: selectedDestinationId,
+            destinationName: selectedDestinationName,
+
+            // Hospital compatibility fields
+            hospital:
+                destinationType === "Hospital"
+                    ? selectedDestinationName
+                    : "",
+            hospitalId:
+                destinationType === "Hospital"
+                    ? String(hospitalId || selectedDestinationId).trim()
+                    : "",
+
+            // Blood bank fields
+            bloodBankId:
+                destinationType === "BloodBank"
+                    ? String(bloodBankId || selectedDestinationId).trim()
+                    : "",
+            bloodBankName:
+                destinationType === "BloodBank"
+                    ? String(bloodBankName || selectedDestinationName).trim()
+                    : "",
+
+            date,
+            time: String(time).trim(),
+            phone: String(phone).trim(),
+            notes: notes ? String(notes).trim() : "",
+            status: "Pending",
+        };
+
+        const appointment = await Appointment.create(appointmentData);
 
         return res.status(201).json({
             success: true,
@@ -59,16 +257,41 @@ router.post("/", async (req, res) => {
             data: appointment,
         });
     } catch (error) {
-        console.error("Book appointment error:", error);
+        console.error("Create appointment error:", error);
 
-        return res.status(400).json({
+        if (error.name === "ValidationError") {
+            return res.status(400).json({
+                success: false,
+                message: "Appointment validation failed.",
+                errors: Object.values(error.errors).map((item) => ({
+                    field: item.path,
+                    message: item.message,
+                })),
+            });
+        }
+
+        if (error.name === "CastError") {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid appointment data.",
+            });
+        }
+
+        return res.status(500).json({
             success: false,
-            message: error.message || "Failed to book appointment.",
+            message: "Failed to book appointment.",
+            error:
+                process.env.NODE_ENV === "development"
+                    ? error.message
+                    : undefined,
         });
     }
 });
 
-// CANCEL AN APPOINTMENT
+// ==========================================
+// PATCH /api/appointments/:id/cancel
+// Cancel an appointment
+// ==========================================
 router.patch("/:id/cancel", async (req, res) => {
     try {
         const { id } = req.params;
@@ -89,14 +312,14 @@ router.patch("/:id/cancel", async (req, res) => {
             });
         }
 
-        const currentStatus = appointment.status?.toLowerCase();
-
         if (
-            ["completed", "cancelled", "rejected"].includes(currentStatus)
+            ["Completed", "Cancelled", "Rejected"].includes(
+                appointment.status
+            )
         ) {
             return res.status(400).json({
                 success: false,
-                message: `Cannot cancel an appointment with status "${appointment.status}".`,
+                message: `Cannot cancel an appointment with status ${appointment.status}.`,
             });
         }
 
@@ -113,12 +336,17 @@ router.patch("/:id/cancel", async (req, res) => {
 
         return res.status(500).json({
             success: false,
-            message: "Unable to cancel appointment.",
+            message: "Failed to cancel appointment.",
         });
     }
 });
 
-// CONFIRM OR REJECT AN APPOINTMENT AND CREATE A NOTIFICATION
+// ==========================================
+// PATCH /api/appointments/:id
+// Confirm or reject an appointment
+// Body: { "status": "Confirmed" }
+//    or { "status": "Rejected" }
+// ==========================================
 router.patch("/:id", async (req, res) => {
     try {
         const { id } = req.params;
@@ -147,67 +375,43 @@ router.patch("/:id", async (req, res) => {
             });
         }
 
-        if (appointment.status?.toLowerCase() !== "pending") {
+        if (appointment.status !== "Pending") {
             return res.status(400).json({
                 success: false,
-                message: "Only pending appointments can be processed.",
+                message: "Only pending appointments can be updated.",
             });
         }
 
-        const donorEmail = (
-            appointment.donorEmail || appointment.email || ""
-        ).trim().toLowerCase();
-
-        if (!donorEmail) {
-            return res.status(400).json({
-                success: false,
-                message: "Donor email is missing from the appointment.",
-            });
-        }
-
-        // Update appointment in MongoDB
         appointment.status = status;
         await appointment.save();
 
-        // Save notification in the notifications collection
+        // Create notification without undoing the appointment update
         try {
             await Notification.create({
-                title: `Appointment ${status}`,
+                title: "Appointment Update",
                 type: "appointment",
-                emailTo: donorEmail,
-                emailBy: req.body.emailBy || "hospital",
-                message:
-                    `Your blood donation appointment at ${appointment.hospital || "the hospital"
-                    } has been ${status.toLowerCase()}.`,
+                emailTo: appointment.donorEmail || appointment.email,
+                emailBy:
+                    req.body.emailBy || appointment.destinationName,
+                message: `Your appointment with ${appointment.destinationName} has been ${status.toLowerCase()}.`,
                 appointmentId: appointment._id,
                 status,
                 read: false,
             });
         } catch (notificationError) {
             console.error(
-                "Notification creation failed:",
-                notificationError
+                "Appointment saved, but notification failed:",
+                notificationError.message
             );
-
-            return res.status(500).json({
-                success: false,
-                appointmentUpdated: true,
-                notificationCreated: false,
-                message:
-                    "Appointment status was updated, but the notification could not be saved.",
-            });
         }
 
         return res.status(200).json({
             success: true,
-            appointmentUpdated: true,
-            notificationCreated: true,
-            message:
-                `Appointment ${status.toLowerCase()} successfully. Notification saved.`,
+            message: `Appointment ${status.toLowerCase()} successfully.`,
             data: appointment,
         });
     } catch (error) {
-        console.error("Appointment update failed:", error);
+        console.error("Update appointment error:", error);
 
         return res.status(500).json({
             success: false,

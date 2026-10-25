@@ -1,16 +1,17 @@
+
 const mongoose = require("mongoose");
 
 const emergencyRequestSchema = new mongoose.Schema(
     {
         requestedBy: {
             type: String,
-            default: "Hospital",
+            default: "Recipient",
             trim: true,
         },
 
         requesterId: {
             type: String,
-            default: "",
+            required: true,
             trim: true,
         },
 
@@ -25,7 +26,6 @@ const emergencyRequestSchema = new mongoose.Schema(
             required: true,
             lowercase: true,
             trim: true,
-            index: true,
         },
 
         patientName: {
@@ -37,7 +37,10 @@ const emergencyRequestSchema = new mongoose.Schema(
         bloodGroup: {
             type: String,
             required: true,
-            enum: ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"],
+            enum: [
+                "A+", "A-", "B+", "B-",
+                "AB+", "AB-", "O+", "O-",
+            ],
         },
 
         units: {
@@ -76,7 +79,7 @@ const emergencyRequestSchema = new mongoose.Schema(
 
         status: {
             type: String,
-            enum: ["Active", "Completed", "Cancelled"],
+            enum: ["Active", "Pending", "Approved", "Resolved", "Cancelled"],
             default: "Active",
         },
     },
