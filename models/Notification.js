@@ -42,7 +42,13 @@ const notificationSchema = new mongoose.Schema(
         },
         status: {
             type: String,
-            enum: ["Approved", "Rejected", "Confirmed"],
+            enum: [
+                "Approved",
+                "Rejected",
+                "Confirmed",
+                "Done",
+                "Not Done",
+            ],
             required: true,
         },
         read: {

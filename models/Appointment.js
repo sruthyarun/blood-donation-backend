@@ -123,6 +123,7 @@ const appointmentSchema = new mongoose.Schema(
                 "Completed",
                 "Rejected",
                 "Cancelled",
+                "Done",
             ],
             default: "Pending",
         },

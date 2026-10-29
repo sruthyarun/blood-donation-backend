@@ -19,6 +19,10 @@ const bloodInventoryRoutes = require("./routes/bloodInventoryRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const donationCampRoutes = require("./routes/donationCampRoutes");
 const emergencyRequestRoutes = require("./routes/emergencyRequestRoutes");
+const completionActionsRoutes = require(
+    "./routes/completionActions"
+);
+
 const app = express();
 
 app.use(cors());
@@ -59,7 +63,10 @@ app.use("/api/emergencyRequests", emergencyRequestRoutes);
 
 app.use("/api/appointments", require("./routes/appointmentRoutes"));
 app.use("/api/donationCamps", donationCampRoutes);
-
+app.use(
+    "/api/completionActions",
+    completionActionsRoutes
+);
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
