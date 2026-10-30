@@ -1,3 +1,4 @@
+
 const Recipient = require("../models/Recipient");
 
 // Create recipient
@@ -18,8 +19,14 @@ const createRecipient = async (req, res) => {
             pincode,
             password,
             confirmPassword,
-            status,
         } = req.body;
+
+        if (!password || !confirmPassword) {
+            return res.status(400).json({
+                success: false,
+                message: "Password and confirm password are required",
+            });
+        }
 
         if (password !== confirmPassword) {
             return res.status(400).json({
@@ -28,19 +35,29 @@ const createRecipient = async (req, res) => {
             });
         }
 
-        const existingRecipient = await Recipient.findOne({ email });
+        const normalizedEmail = email?.trim().toLowerCase();
+
+        if (!normalizedEmail) {
+            return res.status(400).json({
+                success: false,
+                message: "Email is required",
+            });
+        }
+
+        const existingRecipient = await Recipient.findOne({
+            email: normalizedEmail,
+        });
 
         if (existingRecipient) {
-            return res.status(400).json({
+            return res.status(409).json({
                 success: false,
                 message: "Recipient with this email already exists",
             });
         }
 
         const recipient = await Recipient.create({
-
             fullName,
-            email,
+            email: normalizedEmail,
             phone,
             gender,
             dob,
@@ -52,19 +69,31 @@ const createRecipient = async (req, res) => {
             state,
             pincode,
             password,
-            status,
         });
 
-        res.status(201).json({
+        const recipientResponse = recipient.toObject();
+        delete recipientResponse.password;
+        delete recipientResponse.__v;
+
+        return res.status(201).json({
             success: true,
             message: "Recipient created successfully",
-            recipient,
+            recipient: recipientResponse,
         });
+
     } catch (error) {
-        res.status(500).json({
+        console.error("Create recipient error:", error);
+
+        if (error.code === 11000) {
+            return res.status(409).json({
+                success: false,
+                message: "Recipient with this email already exists",
+            });
+        }
+
+        return res.status(500).json({
             success: false,
             message: "Failed to create recipient",
-            error: error.message,
         });
     }
 };
@@ -72,18 +101,20 @@ const createRecipient = async (req, res) => {
 // Get all recipients
 const getRecipients = async (req, res) => {
     try {
-        const recipients = await Recipient.find();
+        const recipients = await Recipient.find().select("-password -__v");
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             count: recipients.length,
             recipients,
         });
+
     } catch (error) {
-        res.status(500).json({
+        console.error("Get recipients error:", error.message);
+
+        return res.status(500).json({
             success: false,
             message: "Failed to fetch recipients",
-            error: error.message,
         });
     }
 };
@@ -91,7 +122,8 @@ const getRecipients = async (req, res) => {
 // Get recipient by ID
 const getRecipientById = async (req, res) => {
     try {
-        const recipient = await Recipient.findById(req.params.id);
+        const recipient = await Recipient.findById(req.params.id)
+            .select("-password -__v");
 
         if (!recipient) {
             return res.status(404).json({
@@ -100,15 +132,24 @@ const getRecipientById = async (req, res) => {
             });
         }
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             recipient,
         });
+
     } catch (error) {
-        res.status(500).json({
+        console.error("Get recipient error:", error.message);
+
+        if (error.name === "CastError") {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid recipient ID",
+            });
+        }
+
+        return res.status(500).json({
             success: false,
             message: "Failed to fetch recipient",
-            error: error.message,
         });
     }
 };
@@ -116,14 +157,30 @@ const getRecipientById = async (req, res) => {
 // Update recipient
 const updateRecipient = async (req, res) => {
     try {
+        // Password must be updated through a separate secure endpoint
+        if (
+            Object.prototype.hasOwnProperty.call(req.body, "password") ||
+            Object.prototype.hasOwnProperty.call(req.body, "confirmPassword")
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: "Use the secure password update endpoint",
+            });
+        }
+
+        const updateData = { ...req.body };
+
+        // Do not allow email changes here
+        delete updateData.email;
+
         const recipient = await Recipient.findByIdAndUpdate(
             req.params.id,
-            req.body,
+            updateData,
             {
                 new: true,
                 runValidators: true,
             }
-        );
+        ).select("-password -__v");
 
         if (!recipient) {
             return res.status(404).json({
@@ -132,16 +189,25 @@ const updateRecipient = async (req, res) => {
             });
         }
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Recipient updated successfully",
             recipient,
         });
+
     } catch (error) {
-        res.status(500).json({
+        console.error("Update recipient error:", error.message);
+
+        if (error.name === "CastError") {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid recipient ID",
+            });
+        }
+
+        return res.status(500).json({
             success: false,
             message: "Failed to update recipient",
-            error: error.message,
         });
     }
 };
@@ -158,15 +224,24 @@ const deleteRecipient = async (req, res) => {
             });
         }
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Recipient deleted successfully",
         });
+
     } catch (error) {
-        res.status(500).json({
+        console.error("Delete recipient error:", error.message);
+
+        if (error.name === "CastError") {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid recipient ID",
+            });
+        }
+
+        return res.status(500).json({
             success: false,
             message: "Failed to delete recipient",
-            error: error.message,
         });
     }
 };

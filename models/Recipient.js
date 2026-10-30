@@ -1,4 +1,6 @@
+
 const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
 
 const recipientSchema = new mongoose.Schema(
     {
@@ -35,14 +37,10 @@ const recipientSchema = new mongoose.Schema(
             type: String,
             required: true,
             enum: [
-                "A+",
-                "A-",
-                "B+",
-                "B-",
-                "AB+",
-                "AB-",
-                "O+",
-                "O-",
+                "A+", "A-",
+                "B+", "B-",
+                "AB+", "AB-",
+                "O+", "O-",
             ],
         },
 
@@ -79,6 +77,7 @@ const recipientSchema = new mongoose.Schema(
         password: {
             type: String,
             required: true,
+            select: false,
         },
 
         status: {
@@ -91,5 +90,13 @@ const recipientSchema = new mongoose.Schema(
         timestamps: true,
     }
 );
+
+// Hash password before saving
+recipientSchema.pre("save", async function () {
+    if (!this.isModified("password")) return;
+
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+});
 
 module.exports = mongoose.model("Recipient", recipientSchema);
