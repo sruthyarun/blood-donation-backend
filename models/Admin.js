@@ -8,6 +8,7 @@ const adminSchema = new mongoose.Schema(
             required: true,
             trim: true,
         },
+
         email: {
             type: String,
             required: true,
@@ -15,18 +16,35 @@ const adminSchema = new mongoose.Schema(
             lowercase: true,
             trim: true,
         },
+
         password: {
             type: String,
             required: true,
-            select: false,
         },
+
+        phone: {
+            type: String,
+            default: "",
+        },
+
+        department: {
+            type: String,
+            default: "",
+        },
+
+        address: {
+            type: String,
+            default: "",
+        },
+
         role: {
             type: String,
-            default: "admin",
-            enum: ["admin"],
+            default: "System Administrator",
         },
     },
-    { timestamps: true }
+    {
+        timestamps: true,
+    }
 );
 
 module.exports = mongoose.model("Admin", adminSchema);

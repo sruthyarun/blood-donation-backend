@@ -22,6 +22,7 @@ const emergencyRequestRoutes = require("./routes/emergencyRequestRoutes");
 const completionActionsRoutes = require(
     "./routes/completionActions"
 );
+const feedbackRoutes = require("./routes/feedbackRoutes");
 
 const app = express();
 
@@ -67,6 +68,8 @@ app.use(
     "/api/completionActions",
     completionActionsRoutes
 );
+app.use("/api/feedback", feedbackRoutes);
+
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
